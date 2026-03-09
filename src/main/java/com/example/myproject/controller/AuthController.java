@@ -4,7 +4,11 @@ import com.example.myproject.dto.LoginRequest;
 import com.example.myproject.dto.LoginResponse;
 import com.example.myproject.dto.RegisterRequest;
 import com.example.myproject.dto.RegisterResponse;
+import com.example.myproject.entity.Role;
+import com.example.myproject.entity.User;
+import com.example.myproject.repository.UserRepository;
 import com.example.myproject.service.UserService;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -19,9 +23,13 @@ public class AuthController {
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private UserRepository userRepository;
+
     @PostMapping("/register")
-    public ResponseEntity<RegisterResponse> register(@RequestBody RegisterRequest request) {
-        return ResponseEntity.ok(userService.registerUser(request));
+    public RegisterResponse register(@RequestBody RegisterRequest request){
+
+        return userService.registerUser(request);
     }
 
     @PostMapping("/login")

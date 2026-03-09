@@ -21,7 +21,17 @@ public class SecurityConfig {
         http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/api/auth/**", "/api/products/**", "/api/cart/**").permitAll() // register + login open
+                        .requestMatchers("/api/auth/**", "/api/products", "/api/cart/**",
+                                "/api/orders/place", "/api/orders/user/**", "/api/orders/*/status",
+                                "/api/orders/all", "/api/orders/*/cancel", "/api/products/**",
+                                "/api/orders/**", "/api/categories/**", "/api/products/category/**",
+                                "/api/products/products").permitAll()
+
+                        .requestMatchers("/api/products/add").hasRole("ADMIN")
+
+                        .requestMatchers("/api/products/delete/**").hasRole("ADMIN")
+
+                        .requestMatchers("/api/products/**").hasAnyRole("USER","ADMIN")// register + login open
                         .anyRequest().authenticated()
                 )
                 .httpBasic(Customizer.withDefaults());

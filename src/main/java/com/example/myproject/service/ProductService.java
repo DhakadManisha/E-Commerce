@@ -1,8 +1,14 @@
 package com.example.myproject.service;
+
+import com.example.myproject.entity.Category;
 import com.example.myproject.entity.Product;
+import com.example.myproject.repository.CategoryRepository;
 import com.example.myproject.repository.ProductRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 
 @Service
@@ -11,14 +17,27 @@ public class ProductService {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private CategoryRepository categoryRepository;
+
+    public Page<Product> getAllProducts(Pageable pageable){
+        return productRepository.findAll(pageable);
+    }
+
     public Product addProduct(Product product) {
+        Long categoryId = product.getCategory().getId();
+
+        Category category = categoryRepository.findById(categoryId)
+                .orElseThrow(() -> new RuntimeException("Category not found"));
+
+        product.setCategory(category);
+
         return productRepository.save(product);
     }
 
     public List<Product> getAllProducts() {
         return productRepository.findAll();
     }
-
     public Product getProductById(Long id) {
         return productRepository.findById(id).orElse(null);
     }

@@ -1,10 +1,10 @@
 package com.example.myproject.entity;
 
-import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 
 @Entity
-public class CartItem {
+public class OrderItem {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -12,28 +12,17 @@ public class CartItem {
 
     private int quantity;
 
+    private double price;  // store price at time of order
+
     @ManyToOne
     private Product product;
 
-
     @ManyToOne
-    @JsonIgnore
-    private Cart cart;
+    @JsonBackReference
+    private Order order;
 
     public Long getId() {
         return id;
-    }
-
-    public Cart getCart() {
-        return cart;
-    }
-
-    public void setCart(Cart cart) {
-        this.cart = cart;
-    }
-
-    public void setProduct(Product product) {
-        this.product = product;
     }
 
     public void setId(Long id) {
@@ -48,8 +37,27 @@ public class CartItem {
         this.quantity = quantity;
     }
 
+    public double getPrice() {
+        return price;
+    }
+
+    public void setPrice(double price) {
+        this.price = price;
+    }
+
     public Product getProduct() {
         return product;
     }
 
+    public void setProduct(Product product) {
+        this.product = product;
+    }
+
+    public Order getOrder() {
+        return order;
+    }
+
+    public void setOrder(Order order) {
+        this.order = order;
+    }
 }

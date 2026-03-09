@@ -21,27 +21,37 @@ public class CartService {
 
     public Cart addToCart(Long userId, Long productId, int quantity) {
 
-        Cart cart = cartRepository.findByUserId(userId);
-
-        if (cart == null) {
-            cart = new Cart();
-            cart.setUserId(userId);
-        }
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    Cart newCart = new Cart();
+                    newCart.setUserId(userId);
+                    return cartRepository.save(newCart);
+                });
 
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
-        // 🔥 check if product already exists
+        if(product.getStock() < quantity){
+            throw new RuntimeException("Out of stock! Available quantity: " + product.getStock());
+        }
+
         Optional<CartItem> existingItem = cart.getItems()
                 .stream()
                 .filter(item -> item.getProduct().getId().equals(productId))
                 .findFirst();
 
         if (existingItem.isPresent()) {
-            existingItem.get().setQuantity(
-                    existingItem.get().getQuantity() + quantity
-            );
+
+            CartItem item= existingItem.get();
+            int newQuantity= item.getQuantity()+quantity;
+
+            if(product.getStock() < newQuantity){
+                throw new RuntimeException("Out of stock! Available quantity: " + product.getStock());
+            }
+
+            item.setQuantity(newQuantity);
         } else {
+
             CartItem item = new CartItem();
             item.setProduct(product);
             item.setQuantity(quantity);
@@ -54,16 +64,27 @@ public class CartService {
     }
 
     public Cart getCart(Long userId) {
-        return cartRepository.findByUserId(userId);
+        Optional<Cart> optional = cartRepository.findByUserId(userId) ;
+
+        if (optional.isEmpty()) {
+            throw new RuntimeException("User not found " + userId);
+        }
+
+        return optional.get();
     }
 
     public Cart removeItem(Long userId, Long productId) {
 
-        Cart cart = cartRepository.findByUserId(userId);
+        Optional<Cart> optionalCart = cartRepository.findByUserId(userId);
+
+        if (optionalCart.isEmpty()) {
+            throw new RuntimeException("Cart not found for user " + userId);
+        }
+
+        Cart cart = optionalCart.get();
 
         cart.getItems().removeIf(item ->
-                item.getProduct().getId().equals(productId)
-        );
+                item.getProduct().getId().equals(productId));
 
         return cartRepository.save(cart);
     }
