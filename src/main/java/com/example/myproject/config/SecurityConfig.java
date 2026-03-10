@@ -25,7 +25,8 @@ public class SecurityConfig {
                                 "/api/orders/place", "/api/orders/user/**", "/api/orders/*/status",
                                 "/api/orders/all", "/api/orders/*/cancel", "/api/products/**",
                                 "/api/orders/**", "/api/categories/**", "/api/products/category/**",
-                                "/api/products/products").permitAll()
+                                "/api/products/products", "/api/address/add", "/api/address/user/**",
+                                "/api/payment/**").permitAll()
 
                         .requestMatchers("/api/products/add").hasRole("ADMIN")
 
