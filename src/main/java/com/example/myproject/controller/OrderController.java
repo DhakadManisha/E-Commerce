@@ -1,6 +1,7 @@
 package com.example.myproject.controller;
 
 
+import com.example.myproject.dto.OrderDTO;
 import com.example.myproject.entity.Order;
 import com.example.myproject.entity.OrderStatus;
 import com.example.myproject.service.OrderService;
@@ -17,8 +18,8 @@ public class OrderController {
     private OrderService orderService;
 
     @PostMapping("/place")
-    public Order placeOrder(@RequestParam Long userId) {
-        return orderService.placeOrder(userId);
+    public OrderDTO placeOrder(@RequestBody Order order){
+        return orderService.placeOrder(order);
     }
 
     @GetMapping("/user/{userId}")
@@ -34,7 +35,7 @@ public class OrderController {
     }
 
     @GetMapping("/all")
-    public List<Order> getAllOrders(){
+    public List<OrderDTO> getAllOrders(){
         return orderService.getAllOrders();
     }
 

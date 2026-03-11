@@ -1,9 +1,12 @@
 package com.example.myproject.service;
 
+import com.example.myproject.dto.OrderDTO;
 import com.example.myproject.entity.*;
+import com.example.myproject.exception.ResourceNotFoundException;
 import com.example.myproject.repository.CartRepository;
 import com.example.myproject.repository.OrderRepository;
 import com.example.myproject.repository.ProductRepository;
+import org.modelmapper.ModelMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -23,16 +26,29 @@ public class OrderService {
     @Autowired
     private ProductRepository productRepository;
 
-    public Order placeOrder(Long userId) {
+    @Autowired
+    private ModelMapper modelMapper;
 
+    public List<OrderDTO> getAllOrders(){
+
+        List<Order> orders = orderRepository.findAll();
+
+        return orders.stream()
+                .map(order -> modelMapper.map(order, OrderDTO.class))
+                .toList();
+    }
+
+    public OrderDTO placeOrder(Order order) {
+
+        long userId= order.getUserId();
         Cart cart= cartRepository.findByUserId(userId)
-                .orElseThrow(() -> new RuntimeException("Cart is empty"));
+                .orElseThrow(() -> new ResourceNotFoundException("Cart is empty"));
 
 
-        Order order = new Order();
-        order.setUserId(userId);
-        order.setOrderDate(LocalDateTime.now());
-        order.setStatus(OrderStatus.PLACED);
+        Order orderAdd = new Order();
+        orderAdd.setUserId(userId);
+        orderAdd.setOrderDate(LocalDateTime.now());
+        orderAdd.setStatus(OrderStatus.PLACED);
 
         double total = 0;
 
@@ -42,7 +58,7 @@ public class OrderService {
 
             //  Final stock validation
             if (product.getStock() < cartItem.getQuantity()) {
-                throw new RuntimeException("Product out of stock: " + product.getName());
+                throw new ResourceNotFoundException("Product out of stock: " + product.getName());
             }
 
             //  Reduce stock
@@ -57,41 +73,44 @@ public class OrderService {
 
             total += orderItem.getPrice() * orderItem.getQuantity();
 
-            order.getItems().add(orderItem);
+            orderAdd.getItems().add(orderItem);
         }
 
-        order.setTotalAmount(total);
+        orderAdd.setTotalAmount(total);
 
         //  Clear cart
         cart.getItems().clear();
+
+
         cartRepository.save(cart);
 
-        return orderRepository.save(order);
+        Order savedOrder = orderRepository.save(orderAdd);
+
+        return modelMapper.map(savedOrder, OrderDTO.class);
     }
 
 
     public List<Order> getOrdersByUser(Long userId) {
+        Order order = orderRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
+
         return orderRepository.findByUserId(userId);
     }
 
     public Order updateOrderStatus(Long orderId, OrderStatus status){
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         order.setStatus(status);
 
         return orderRepository.save(order);
     }
 
-    public List<Order> getAllOrders(){
-        return orderRepository.findAll();
-    }
-
     public Order cancelOrder(Long orderId){
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         order.setStatus(OrderStatus.CANCELLED);
 
@@ -101,7 +120,7 @@ public class OrderService {
     public void deleteOrder(Long orderId){
 
         Order order = orderRepository.findById(orderId)
-                .orElseThrow(() -> new RuntimeException("Order not found"));
+                .orElseThrow(() -> new ResourceNotFoundException("Order not found"));
 
         orderRepository.delete(order);
     }
