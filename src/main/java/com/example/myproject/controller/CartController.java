@@ -1,11 +1,15 @@
 package com.example.myproject.controller;
 
 import com.example.myproject.entity.Cart;
+import com.example.myproject.entity.User;
 import com.example.myproject.service.CartService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Optional;
 
+@CrossOrigin(origins = "http://localhost:3000")
 @RestController
 @RequestMapping("/api/cart")
 public class CartController {
@@ -33,5 +37,20 @@ public class CartController {
 
         return cartService.removeItem(userId, productId);
     }
+
+    @PutMapping("/increase")
+    public Cart increaseQuantity(@RequestParam Long userId,
+                                 @RequestParam Long productId){
+
+        return cartService.increaseQuantity(userId, productId);
+    }
+
+    @PutMapping("/decrease")
+    public Cart decreaseQuantity(@RequestParam Long userId,
+                                           @RequestParam Long productId){
+
+        return cartService.decreaseQuantity(userId, productId);
+    }
+
 }
 
