@@ -11,29 +11,37 @@ import com.example.myproject.service.UserService;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
 @RequestMapping("/api/auth")
+@CrossOrigin(origins = "http://localhost:3000")
 public class AuthController {
 
     @Autowired
     private UserService userService;
 
     @Autowired
+    private JwtUtil jwtUtil;
+
+    @Autowired
     private UserRepository userRepository;
 
-    @PostMapping("/register")
-    public RegisterResponse register(@RequestBody RegisterRequest request){
+    @PostMapping("/login")
+    public String login(@RequestBody User user){
 
-        return userService.registerUser(request);
+        User existingUser = userRepository.findByUsername(user.getUsername())
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        if(!existingUser.getPassword().equals(user.getPassword())){
+            throw new RuntimeException("Invalid password");
+        }
+
+        return jwtUtil.generateToken(user.getUsername());
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request) {
-        return ResponseEntity.ok(userService.loginUser(request));
+    @PostMapping("/register")
+    public User register(@RequestBody User user){
+        return userRepository.save(user);
     }
 }

@@ -40,15 +40,16 @@ public class OrderService {
 
     public OrderDTO placeOrder(Order order) {
 
-        long userId= order.getUserId();
-        Cart cart= cartRepository.findByUserId(userId)
+        Long userId = order.getUserId();
+
+        Cart cart = cartRepository.findByUserId(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Cart is empty"));
 
-
-        Order orderAdd = new Order();
-        orderAdd.setUserId(userId);
-        orderAdd.setOrderDate(LocalDateTime.now());
-        orderAdd.setStatus(OrderStatus.PLACED);
+        // ✅ Use this object
+        Order order1 = new Order();
+        order1.setUserId(userId);
+        order1.setOrderDate(LocalDateTime.now());
+        order1.setStatus(OrderStatus.PLACED);
 
         double total = 0;
 
@@ -56,12 +57,11 @@ public class OrderService {
 
             Product product = cartItem.getProduct();
 
-            //  Final stock validation
             if (product.getStock() < cartItem.getQuantity()) {
-                throw new ResourceNotFoundException("Product out of stock: " + product.getName());
+                throw new RuntimeException("Out of stock: " + product.getName());
             }
 
-            //  Reduce stock
+            // reduce stock
             product.setStock(product.getStock() - cartItem.getQuantity());
             productRepository.save(product);
 
@@ -69,22 +69,24 @@ public class OrderService {
             orderItem.setProduct(product);
             orderItem.setQuantity(cartItem.getQuantity());
             orderItem.setPrice(product.getPrice());
-            orderItem.setOrder(order);
 
-            total += orderItem.getPrice() * orderItem.getQuantity();
+            // ✅ IMPORTANT
+            orderItem.setOrder(order1);
 
-            orderAdd.getItems().add(orderItem);
+            total += product.getPrice() * cartItem.getQuantity();
+
+            // ✅ Add in order1
+            order1.getItems().add(orderItem);
         }
 
-        orderAdd.setTotalAmount(total);
+        order1.setTotalAmount(total);
 
-        //  Clear cart
+        // ✅ SAVE CORRECT OBJECT
+        Order savedOrder = orderRepository.save(order1);
+
+        // ✅ Clear cart
         cart.getItems().clear();
-
-
         cartRepository.save(cart);
-
-        Order savedOrder = orderRepository.save(orderAdd);
 
         return modelMapper.map(savedOrder, OrderDTO.class);
     }
