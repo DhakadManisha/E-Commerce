@@ -1,24 +1,28 @@
 import React, { useEffect, useState } from "react";
-import axios from "../api/axiosConfig";
+import axios from "../Api/axiosConfig";
+import { useUser } from "../context/UserContext";
 
 function OrderHistory(){
 
+  const { userId } = useUser();
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
 
-    axios.get("http://localhost:8080/api/orders/user/1")
-      .then(res => {
-        setOrders(res.data);
-      })
-      .catch(err => {
-        console.log(err);
-      });
+    if(userId){
+      axios.get(`http://localhost:8080/api/orders/user/${userId}`)
+        .then(res => {
+          setOrders(res.data);
+        })
+        .catch(err => {
+          console.log(err);
+        });
+    }
 
-  }, []);
+  }, [userId]);
 
   return(
-    <div>
+    <div className="container mt-4">
       <h2>Your Orders</h2>
 
       {orders.length === 0 ? (
@@ -34,15 +38,15 @@ function OrderHistory(){
 
             <h3>Order ID: {order.id}</h3>
             <p>Status: {order.status}</p>
-            <p>Total: {order.totalAmount}</p>
+            <p>Total: ₹{order.totalAmount}</p>
 
             <h4>Items:</h4>
 
-            {order.items.map(item => (
+            {order.items && order.items.map(item => (
               <div key={item.id}>
-                <p>{item.product.name}</p>
+                <p>{item.product?.name}</p>
                 <p>Qty: {item.quantity}</p>
-                <p>Price: {item.price}</p>
+                <p>Price: ₹{item.price}</p>
               </div>
             ))}
 

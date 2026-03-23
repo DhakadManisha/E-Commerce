@@ -1,77 +1,155 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { useUser } from "../context/UserContext";
+import ErrorMessage from "./ErrorMessage";
 
 function Login(){
+
   const navigate = useNavigate();
-  const [username, setUsername] = useState("manisha"); // Default values
-  const [password, setPassword] = useState("password");
+  const { login } = useUser();
+
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
 
-  const handleLogin = async () => {
-    console.log("🔐 Login attempt:", username, password);
+  const validateForm = () => {
+    const errors = {};
 
-    try {
-      const response = await axios.post("http://localhost:8080/api/auth/login", {
-        username: username,
-        password: password
-      });
+    if (!username.trim()) {
+      errors.username = "Username is required";
+    }
 
-      console.log("✅ Response:", response.data);
+    if (!password) {
+      errors.password = "Password is required";
+    } else if (password.length < 4) {
+      errors.password = "Password must be at least 4 characters";
+    }
 
-      // Backend se token mil raha hai ya nahi check karo
-      if (response.data && response.data.token) {
-        localStorage.setItem("token", response.data.token);
-      } else {
-        localStorage.setItem("token", response.data); // Direct string bhi ho sakta hai
-      }
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
-      console.log("💾 Token saved:", localStorage.getItem("token"));
-      alert("Login SUCCESS!");
-      navigate("/products");
+  const handleLogin = () => {
+    setError("");
+    setSuccess("");
 
-    } catch (err) {
-      console.log("❌ ERROR:", err.response?.data || err.message);
-      setError(err.response?.data?.message || "Login failed");
-      alert("Login FAILED: " + (err.response?.data?.message || err.message));
+    if (!validateForm()) {
+      return;
+    }
+
+    setLoading(true);
+
+    axios.post("http://localhost:8080/api/auth/login", {
+      username,
+      password
+    })
+    .then(res => {
+      console.log("Login response:", res.data);
+
+      // Use UserContext login method
+      login(res.data);
+
+      // Also dispatch event for additional listeners
+      window.dispatchEvent(new Event("login"));
+
+      setSuccess("Login Successful! Redirecting...");
+      setTimeout(() => {
+        navigate("/products");
+      }, 1000);
+    })
+    .catch(err => {
+      setError(err.response?.data?.message || "Invalid username or password");
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleLogin();
     }
   };
 
-  return (
-    <div className="container d-flex justify-content-center align-items-center min-vh-100 py-5">
-      <div className="card p-4 shadow-lg" style={{width:"400px"}}>
-        <h3 className="text-center mb-4 text-primary">🔐 Login</h3>
+  return(
+    <div className="container d-flex justify-content-center align-items-center" style={{height:"100vh"}}>
 
-        <input
-          className="form-control mb-3"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
+      <div className="card p-4 shadow" style={{width:"300px"}}>
 
-        <input
-          type="password"
-          className="form-control mb-4"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+        <h3 className="text-center mb-3">🔐 Login</h3>
 
-        {error && <div className="alert alert-danger">{error}</div>}
+        {error && (
+          <ErrorMessage
+            message={error}
+            type="danger"
+            onClose={() => setError("")}
+          />
+        )}
+
+        {success && (
+          <ErrorMessage
+            message={success}
+            type="success"
+            onClose={() => setSuccess("")}
+            autoClose={false}
+          />
+        )}
+
+        <div className="mb-3">
+          <label className="form-label">Username</label>
+          <input
+            type="text"
+            className={`form-control ${validationErrors.username ? "is-invalid" : ""}`}
+            placeholder="Enter username"
+            value={username}
+            onChange={e => setUsername(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={loading}
+          />
+          {validationErrors.username && (
+            <div className="invalid-feedback d-block">{validationErrors.username}</div>
+          )}
+        </div>
+
+        <div className="mb-3">
+          <label className="form-label">Password</label>
+          <input
+            type="password"
+            className={`form-control ${validationErrors.password ? "is-invalid" : ""}`}
+            placeholder="Enter password"
+            value={password}
+            onChange={e => setPassword(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={loading}
+          />
+          {validationErrors.password && (
+            <div className="invalid-feedback d-block">{validationErrors.password}</div>
+          )}
+        </div>
 
         <button
-          className="btn btn-success w-100 mb-3"
+          className="btn btn-success w-100 mb-2"
           onClick={handleLogin}
+          disabled={loading}
         >
-          Login
+          {loading ? "Logging in..." : "Login"}
         </button>
 
-        <div className="text-center">
-          <button className="btn btn-link p-0" onClick={() => navigate("/register")}>
-            New user? Register
-          </button>
-        </div>
+        <button
+          className="btn btn-link w-100"
+          onClick={() => navigate("/register")}
+          disabled={loading}
+        >
+          New user? Register now
+        </button>
+
       </div>
+
     </div>
   );
 }

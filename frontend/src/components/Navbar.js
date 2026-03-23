@@ -1,40 +1,49 @@
-import { Link, useNavigate } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { useUser } from "../context/UserContext";
 
 function Navbar(){
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const navigate = useNavigate();
 
-  const checkLogin = () => {
-    const token = localStorage.getItem("token");
-    setIsLoggedIn(!!token && token !== "null" && token.length > 10);
-  };
+  const { isLoggedIn, logout } = useUser();
 
-  useEffect(() => {
-    checkLogin();
-  }, []);
-
-  const logout = () => {
-    localStorage.clear(); // Clear everything
-    setIsLoggedIn(false);
-    navigate("/");
-  };
-
-  return (
+  return(
     <nav className="navbar navbar-dark bg-dark px-4">
-      <h3 className="text-white mb-0">🛒 MyStore</h3>
-      <div className="d-flex gap-2">
-        <Link to="/products" className="btn btn-outline-light">Products</Link>
-        <Link to="/cart" className="btn btn-outline-light">Cart</Link>
+      <h3 className="text-white">🛒 MyStore</h3>
 
-        {isLoggedIn ? (
+      <div>
+
+        {isLoggedIn && (
           <>
-            <Link to="/orders" className="btn btn-outline-light">Orders</Link>
-            <button className="btn btn-danger" onClick={logout}>Logout</button>
+            <Link to="/products" className="btn btn-outline-light me-2">
+              Products
+            </Link>
+
+            <Link to="/cart" className="btn btn-outline-light me-2">
+              Cart
+            </Link>
+
+            <Link to="/orders" className="btn btn-outline-light me-2">
+              Orders
+            </Link>
+
+            <Link to="/profile" className="btn btn-outline-light me-2">
+              Profile
+            </Link>
           </>
-        ) : (
-          <Link to="/" className="btn btn-outline-light">Login</Link>
         )}
+
+        {!isLoggedIn ? (
+          <Link to="/" className="btn btn-outline-light">
+            Login
+          </Link>
+        ) : (
+          <button
+            className="btn btn-danger"
+            onClick={logout}
+          >
+            Logout
+          </button>
+        )}
+
       </div>
     </nav>
   );
